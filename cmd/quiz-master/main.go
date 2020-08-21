@@ -4,16 +4,40 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/csv"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
-const file = "problems.csv"
+const (
+	file        = "problems.csv"
+	defaultTime = time.Second * 30
+)
 
 func main() {
+	timeLimit := flag.Duration("defaultTime", defaultTime, "an int")
+	flag.Parse()
+
+	questions := parseFile()
+
+	correct := make(chan bool, 1)
+	go func() {
+		correct <- askQuestion(questions)
+	}()
+
+	select {
+	case <-time.After(*timeLimit):
+		fmt.Printf("Out of time! You got %d out of %d file correct!\n", len(correct), len(questions))
+	}
+
+	fmt.Printf("You got %d out of %d questions correct!\n", len(correct), len(questions))
+}
+
+func parseFile() [][]string {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		log.Fatal(err)
@@ -26,7 +50,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var correct int
+	return questions
+}
+
+func askQuestion(questions [][]string) bool {
 	for i, q := range questions {
 		fmt.Printf("Q%d, what is %v?\n", i+1, q[0])
 
@@ -40,9 +67,11 @@ func main() {
 		answer = strings.Replace(answer, "\n", "", -1)
 
 		if answer == q[1] {
-			correct++
+			return true
 		}
+
+		return false
 	}
 
-	fmt.Printf("You got %d out of %d questions correct!", correct, len(questions))
+	return false
 }
