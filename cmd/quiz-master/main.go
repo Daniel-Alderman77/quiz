@@ -19,10 +19,15 @@ const (
 )
 
 func main() {
-	timeLimit := flag.Duration("defaultTime", defaultTime, "an int")
+	timeLimit := flag.Duration("defaultTime", defaultTime, "a duration, i.e: 30s")
 	flag.Parse()
 
 	questions := parseFile()
+
+	fmt.Printf("You have %v to answer as many questions as possible, press enter to start!", timeLimit)
+
+	input := bufio.NewScanner(os.Stdin)
+	input.Scan()
 
 	correct := make(chan bool, 1)
 	go func() {
